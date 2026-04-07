@@ -1,4 +1,4 @@
-# WinSpotlight 🔍
+# OmniBar
 
 A macOS Spotlight-style launcher for Windows, built with C# and WPF.
 
