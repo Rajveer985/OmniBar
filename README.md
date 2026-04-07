@@ -27,7 +27,7 @@ A macOS Spotlight-style launcher for Windows, built with C# and WPF.
 
 ### Option A — dotnet CLI (recommended)
 ```
-cd WinSpotlight
+cd OmniBar
 dotnet run
 ```
 
@@ -35,7 +35,7 @@ dotnet run
 ```
 dotnet publish -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true
 ```
-Output is in `bin\Release\net8.0-windows\win-x64\publish\WinSpotlight.exe`
+Output is in `bin\Release\net8.0-windows\win-x64\publish\OmniBar.exe`
 
 ### Option C — Visual Studio
 Open the folder in Visual Studio 2022 (or later), press **F5**.
@@ -46,7 +46,7 @@ Open the folder in Visual Studio 2022 (or later), press **F5**.
 
 | Action | Key / gesture |
 |--------|--------------|
-| **Open** WinSpotlight | `Alt + Space` |
+| **Open** OmniBar | `Alt + Space` |
 | **Navigate** results | `↑` / `↓` arrow keys |
 | **Launch** selected | `Enter` or single click |
 | **Close** | `Esc` or click elsewhere |
@@ -68,14 +68,14 @@ To use a different shortcut, edit `MainWindow.xaml.cs` — look for `VK_SPACE = 
 ## Project structure
 
 ```
-WinSpotlight/
+OmniBar/
 ├── App.xaml / App.xaml.cs        — startup, system tray
 ├── MainWindow.xaml / .cs         — Spotlight UI, keyboard navigation
 ├── Models.cs                     — SearchResult data model
 ├── HotkeyManager.cs              — global Alt+Space hotkey (Win32)
 ├── ClipboardManager.cs           — clipboard history watcher (Win32)
 ├── SearchEngine.cs               — all search providers
-└── WinSpotlight.csproj
+└── OmniBar.csproj
 ```
 
 ---
@@ -83,6 +83,6 @@ WinSpotlight/
 ## Add to Windows startup (optional)
 
 1. Press `Win + R` → type `shell:startup` → Enter
-2. Create a shortcut to `WinSpotlight.exe` in that folder
+2. Create a shortcut to `OmniBar.exe` in that folder
 
 It will start minimised to the system tray on login.
