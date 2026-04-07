@@ -1,0 +1,14 @@
+[Bb]in/
+[Oo]bj/
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+.vscode/
+
+# GitHub info
+git_info.txt
+git_status.txt
+build_output.txt
+build_output2.txt
