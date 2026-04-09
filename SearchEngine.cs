@@ -27,13 +27,20 @@ public sealed class SearchEngine
 
     public async Task<List<SearchResult>> SearchAsync(string query, CancellationToken ct = default)
     {
-        // Empty query → show clipboard history
+        // Empty query → show upcoming events + clipboard history
         if (string.IsNullOrWhiteSpace(query))
-            return ClipboardResults("").Take(6).ToList();
+        {
+            var emptyResults = new List<SearchResult>();
+            emptyResults.AddRange(await GetCalendarEventsAsync());
+            emptyResults.AddRange(ClipboardResults("").Take(4));
+            return emptyResults;
+        }
 
         var results = new List<SearchResult>();
 
-        // 1. Calculator (instant, synchronous)
+        // 0. Timer / Calendar specific triggers
+        var timer = TryProcessTimer(query);
+        if (timer != null) results.Add(timer);
         var math = TryCalculate(query);
         if (math != null) results.Add(math);
 
@@ -254,4 +261,86 @@ public sealed class SearchEngine
         Category   = ResultCategory.Web,
         ActionPath = $"https://www.google.com/search?q={Uri.EscapeDataString(query)}"
     };
+
+    // ═══════════════════════════════════════════════════════════════════════
+    //  Timer / Calendar Implementation
+    // ═══════════════════════════════════════════════════════════════════════
+
+    private static readonly Regex TimerRx = new(@"^(?:timer\s+)?(\d+)([smh]?)$", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+
+    private static SearchResult? TryProcessTimer(string query)
+    {
+        var match = TimerRx.Match(query.Trim());
+        if (!match.Success) return null;
+
+        int value = int.Parse(match.Groups[1].Value);
+        string unit = match.Groups[2].Value.ToLowerInvariant();
+        
+        string label = unit switch {
+            "s" => "seconds",
+            "h" => "hours",
+            _   => "minutes"
+        };
+
+        // Convert to seconds for action path
+        int seconds = unit switch {
+            "s" => value,
+            "h" => value * 3600,
+            _   => value * 60
+        };
+
+        // Generate ISO 8601 duration string (e.g., PT5M, PT30S)
+        string isoDuration = unit switch {
+            "s" => $"PT{value}S",
+            "h" => $"PT{value}H",
+            _   => $"PT{value}M"
+        };
+
+        return new SearchResult {
+            Title = $"Set timer for {value} {label}",
+            Subtitle = "Open Windows Clock with this duration",
+            Category = ResultCategory.Timer,
+            ActionPath = isoDuration
+        };
+    }
+
+    private async Task<List<SearchResult>> GetCalendarEventsAsync()
+    {
+        try 
+        {
+            var results = new List<SearchResult>();
+            
+            // WinRT Appointments API
+            var store = await Windows.ApplicationModel.Appointments.AppointmentManager.RequestStoreAsync(
+                Windows.ApplicationModel.Appointments.AppointmentStoreAccessType.AllCalendarsReadOnly);
+            
+            if (store == null) return results;
+
+            var options = new Windows.ApplicationModel.Appointments.FindAppointmentsOptions();
+            options.MaxCount = 3;
+            options.FetchProperties.Add(Windows.ApplicationModel.Appointments.AppointmentProperties.Subject);
+            options.FetchProperties.Add(Windows.ApplicationModel.Appointments.AppointmentProperties.StartTime);
+            options.FetchProperties.Add(Windows.ApplicationModel.Appointments.AppointmentProperties.Location);
+
+            var now = DateTimeOffset.Now;
+            var appointments = await store.FindAppointmentsAsync(now, TimeSpan.FromDays(7), options);
+
+            foreach (var appt in appointments)
+            {
+                results.Add(new SearchResult {
+                    Title = appt.Subject,
+                    Subtitle = $"{appt.StartTime:MMM dd, HH:mm} — {appt.Location}",
+                    Category = ResultCategory.Calendar,
+                    ActionPath = "" // No specific action yet
+                });
+            }
+
+            return results;
+        }
+        catch 
+        { 
+            // Return empty list if access denied or unsupported
+            return []; 
+        }
+    }
 }

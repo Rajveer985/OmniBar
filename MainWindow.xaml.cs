@@ -333,6 +333,20 @@ public partial class MainWindow : Window
                     System.Windows.Clipboard.SetText(result.ActionPath);
                     break;
 
+                case ResultCategory.Timer:
+                    // Launch Windows Clock app with duration
+                    string uri = "ms-clock:timer";
+                    if (!string.IsNullOrEmpty(result.ActionPath))
+                        uri += $"?duration={result.ActionPath}";
+                        
+                    Process.Start(new ProcessStartInfo(uri) { UseShellExecute = true });
+                    break;
+
+                case ResultCategory.Calendar:
+                    // Open Windows Calendar app
+                    Process.Start(new ProcessStartInfo("outlookcal:") { UseShellExecute = true });
+                    break;
+
                 default:
                     // App, File, Web — open with shell
                     Process.Start(new ProcessStartInfo(result.ActionPath)
