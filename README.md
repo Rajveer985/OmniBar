@@ -8,11 +8,14 @@ A macOS Spotlight-style launcher for Windows, built with C# and WPF.
 
 | Feature | How it works |
 |---------|-------------|
+| **Fluid Animations** | High-end macOS-style "pop-in" transitions and smooth layout shifts |
 | **Launch apps** | Indexes all Start Menu shortcuts — type the app name and hit Enter |
+| **Timer Adder** | Type `timer 5m` to set a countdown in the native Windows Clock app |
+| **Calendar Events**| View upcoming schedule directly from the search bar (WinRT integration) |
 | **Search files** | Searches Desktop, Documents, Downloads, Pictures, Music, Videos |
-| **Web search** | Always available at the bottom — opens Google in your default browser |
-| **Calculator** | Type any math expression (`3 * (4 + 2)`) — result is copied to clipboard on Enter |
-| **Clipboard history** | Tracks your last 25 clipboard entries — select to copy again |
+| **Calculator** | Type any math expression (`3+2`) — results appear instantly |
+| **Clipboard history**| Tracks your last 25 entries — select to copy again |
+| **Web search** | Always available at the bottom — opens Google in your browser |
 
 ---
 
@@ -32,10 +35,10 @@ dotnet run
 ```
 
 ### Option B — publish a single EXE
+```powershell
+dotnet publish -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:PublishReadyToRun=true
 ```
-dotnet publish -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true
-```
-Output is in `bin\Release\net8.0-windows\win-x64\publish\OmniBar.exe`
+Output is in `bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\WinSpotlight.exe`
 
 ### Option C — Visual Studio
 Open the folder in Visual Studio 2022 (or later), press **F5**.
