@@ -7,6 +7,8 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Media;
+using System.Windows.Media.Animation;
 
 namespace WinSpotlight;
 
@@ -55,14 +57,44 @@ public partial class MainWindow : Window
         {
             ResetUI();
             PositionOnActiveMonitor();
+            
+            // Ensure initial state for animation
+            Card.Opacity = 0;
+            CardScale.ScaleX = 0.96;
+            CardScale.ScaleY = 0.96;
+
             Show();
             Activate();
             SearchBox.Focus();
+
+            if (FindResource("ShowAnim") is Storyboard showAnim)
+            {
+                showAnim.Begin();
+            }
         });
     }
 
-    private void HideSpotlight()
+    private async void HideSpotlight()
     {
+        if (Visibility != Visibility.Visible) return;
+
+        // Play hide animation first
+        if (FindResource("HideAnim") is Storyboard hideAnim)
+        {
+            var tcs = new TaskCompletionSource<bool>();
+            EventHandler onCompleted = null!;
+            onCompleted = (s, e) => 
+            {
+                hideAnim.Completed -= onCompleted;
+                tcs.SetResult(true);
+            };
+            hideAnim.Completed += onCompleted;
+            hideAnim.Begin();
+            
+            // Wait for animation or timeout (just in case)
+            await Task.WhenAny(tcs.Task, Task.Delay(250));
+        }
+
         Hide();
         ResetUI();
     }
@@ -74,9 +106,11 @@ public partial class MainWindow : Window
 
         SearchBox.Text           = "";
         ResultsList.ItemsSource  = null;
-        ResultsList.Visibility   = Visibility.Collapsed;
-        Separator.Visibility     = Visibility.Collapsed;
-        FooterBar.Visibility     = Visibility.Collapsed;
+        
+        ResultsPanel.Visibility  = Visibility.Collapsed;
+        ResultsPanel.Opacity     = 0;
+        ResultsTranslate.Y       = -10;
+
         ClearBtn.Visibility      = Visibility.Collapsed;
     }
 
@@ -125,13 +159,17 @@ public partial class MainWindow : Window
             if (token.IsCancellationRequested) return;
 
             bool hasResults = results.Count > 0;
-            ResultsList.ItemsSource  = results;
-            ResultsList.Visibility   = hasResults ? Visibility.Visible : Visibility.Collapsed;
-            Separator.Visibility     = hasResults ? Visibility.Visible : Visibility.Collapsed;
-            FooterBar.Visibility     = hasResults ? Visibility.Visible : Visibility.Collapsed;
-
+            ResultsList.ItemsSource = results;
+            
             if (hasResults)
+            {
                 ResultsList.SelectedIndex = 0;
+                ShowResultsPanel();
+            }
+            else
+            {
+                HideResultsPanel();
+            }
         }
         catch (OperationCanceledException) { /* normal debounce cancel */ }
         catch (Exception ex)
@@ -178,6 +216,29 @@ public partial class MainWindow : Window
                 e.Handled = true;
                 break;
         }
+    }
+
+    private void ShowResultsPanel()
+    {
+        if (ResultsPanel.Visibility == Visibility.Visible && ResultsPanel.Opacity > 0.9) return;
+
+        ResultsPanel.Visibility = Visibility.Visible;
+        
+        var duration = TimeSpan.FromSeconds(0.25);
+        var ease = new CubicEase { EasingMode = EasingMode.EaseOut };
+
+        var animOpacity = new DoubleAnimation(0, 1, duration) { EasingFunction = ease };
+        var animTranslate = new DoubleAnimation(-12, 0, duration) { EasingFunction = ease };
+
+        ResultsPanel.BeginAnimation(OpacityProperty, animOpacity);
+        ResultsTranslate.BeginAnimation(TranslateTransform.YProperty, animTranslate);
+    }
+
+    private void HideResultsPanel()
+    {
+        ResultsPanel.Visibility = Visibility.Collapsed;
+        ResultsPanel.Opacity = 0;
+        ResultsTranslate.Y = -12;
     }
 
     private void ResultsList_PreviewKeyDown(object sender, System.Windows.Input.KeyEventArgs e)

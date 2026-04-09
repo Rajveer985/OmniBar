@@ -115,6 +115,55 @@
                 </Trigger>
             </Style.Triggers>
         </Style>
+
+        <!-- ── Spotlight Animations ────────────────────────────────────── -->
+        <Storyboard x:Key="ShowAnim">
+            <DoubleAnimation Duration="0:0:0.18" To="1" 
+                             Storyboard.TargetName="Card" 
+                             Storyboard.TargetProperty="Opacity">
+                <DoubleAnimation.EasingFunction>
+                    <CubicEase EasingMode="EaseOut"/>
+                </DoubleAnimation.EasingFunction>
+            </DoubleAnimation>
+            <DoubleAnimation Duration="0:0:0.18" From="0.96" To="1" 
+                             Storyboard.TargetName="CardScale" 
+                             Storyboard.TargetProperty="ScaleX">
+                <DoubleAnimation.EasingFunction>
+                    <CubicEase EasingMode="EaseOut"/>
+                </DoubleAnimation.EasingFunction>
+            </DoubleAnimation>
+            <DoubleAnimation Duration="0:0:0.18" From="0.96" To="1" 
+                             Storyboard.TargetName="CardScale" 
+                             Storyboard.TargetProperty="ScaleY">
+                <DoubleAnimation.EasingFunction>
+                    <CubicEase EasingMode="EaseOut"/>
+                </DoubleAnimation.EasingFunction>
+            </DoubleAnimation>
+        </Storyboard>
+
+        <Storyboard x:Key="HideAnim">
+            <DoubleAnimation Duration="0:0:0.12" To="0" 
+                             Storyboard.TargetName="Card" 
+                             Storyboard.TargetProperty="Opacity">
+                <DoubleAnimation.EasingFunction>
+                    <CubicEase EasingMode="EaseIn"/>
+                </DoubleAnimation.EasingFunction>
+            </DoubleAnimation>
+            <DoubleAnimation Duration="0:0:0.12" To="0.98" 
+                             Storyboard.TargetName="CardScale" 
+                             Storyboard.TargetProperty="ScaleX">
+                <DoubleAnimation.EasingFunction>
+                    <CubicEase EasingMode="EaseIn"/>
+                </DoubleAnimation.EasingFunction>
+            </DoubleAnimation>
+            <DoubleAnimation Duration="0:0:0.12" To="0.98" 
+                             Storyboard.TargetName="CardScale" 
+                             Storyboard.TargetProperty="ScaleY">
+                <DoubleAnimation.EasingFunction>
+                    <CubicEase EasingMode="EaseIn"/>
+                </DoubleAnimation.EasingFunction>
+            </DoubleAnimation>
+        </Storyboard>
     </Window.Resources>
 
     <!-- ── Outer margin gives room for drop-shadow ────────────────────────── -->
@@ -124,7 +173,12 @@
                 CornerRadius="16"
                 Background="#E51E1E20"
                 BorderBrush="#38FFFFFF"
-                BorderThickness="1">
+                BorderThickness="1"
+                RenderTransformOrigin="0.5,0.5"
+                Opacity="0">
+            <Border.RenderTransform>
+                <ScaleTransform x:Name="CardScale" ScaleX="0.96" ScaleY="0.96"/>
+            </Border.RenderTransform>
             <Border.Effect>
                 <DropShadowEffect Color="Black"
                                   BlurRadius="40"
@@ -224,48 +278,54 @@
                             HorizontalAlignment="Center"/>
                 </Grid>
 
-                <!-- ── Thin separator (shown only when results exist) ────── -->
-                <Rectangle Grid.Row="1"
-                           x:Name="Separator"
-                           Height="0.6"
-                           Fill="#28FFFFFF"
-                           Visibility="Collapsed"/>
+                <!-- ── Results Section (Animated) ───────────────────────────── -->
+                <StackPanel Grid.Row="1" Grid.RowSpan="3"
+                            x:Name="ResultsPanel"
+                            Visibility="Collapsed"
+                            Opacity="0"
+                            RenderTransformOrigin="0.5,0">
+                    <StackPanel.RenderTransform>
+                        <TranslateTransform x:Name="ResultsTranslate" Y="-10"/>
+                    </StackPanel.RenderTransform>
 
-                <!-- ── Results ListBox ──────────────────────────────────── -->
-                <ListBox Grid.Row="2"
-                         x:Name="ResultsList"
-                         Background="Transparent"
-                         BorderThickness="0"
-                         Padding="0,4,0,4"
-                         ItemTemplate="{StaticResource ResultTemplate}"
-                         ItemContainerStyle="{StaticResource ResultItemStyle}"
-                         ScrollViewer.HorizontalScrollBarVisibility="Disabled"
-                         ScrollViewer.VerticalScrollBarVisibility="Auto"
-                         VirtualizingPanel.IsVirtualizing="True"
-                         Visibility="Collapsed"
-                         MouseLeftButtonUp="ResultsList_Click"
-                         PreviewKeyDown="ResultsList_PreviewKeyDown"/>
+                    <!-- ── Thin separator ────── -->
+                    <Rectangle x:Name="Separator"
+                               Height="0.6"
+                               Fill="#28FFFFFF"/>
 
-                <!-- ── Footer hint bar ──────────────────────────────────── -->
-                <Border Grid.Row="3"
-                        x:Name="FooterBar"
-                        BorderBrush="#18FFFFFF"
-                        BorderThickness="0,0.6,0,0"
-                        Padding="14,7"
-                        Visibility="Collapsed">
-                    <StackPanel Orientation="Horizontal"
-                                HorizontalAlignment="Center"
-                                Opacity="0.55">
-                        <TextBlock Foreground="White" FontSize="11">
-                            <Run Text="↑↓" FontWeight="SemiBold"/>
-                            <Run Text="  Navigate   "/>
-                            <Run Text="↵" FontWeight="SemiBold"/>
-                            <Run Text="  Open   "/>
-                            <Run Text="Esc" FontWeight="SemiBold"/>
-                            <Run Text="  Close"/>
-                        </TextBlock>
-                    </StackPanel>
-                </Border>
+                    <!-- ── Results ListBox ──────────────────────────────────── -->
+                    <ListBox x:Name="ResultsList"
+                             Background="Transparent"
+                             BorderThickness="0"
+                             Padding="0,4,0,4"
+                             ItemTemplate="{StaticResource ResultTemplate}"
+                             ItemContainerStyle="{StaticResource ResultItemStyle}"
+                             ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                             ScrollViewer.VerticalScrollBarVisibility="Auto"
+                             VirtualizingPanel.IsVirtualizing="True"
+                             MaxHeight="420"
+                             MouseLeftButtonUp="ResultsList_Click"
+                             PreviewKeyDown="ResultsList_PreviewKeyDown"/>
+
+                    <!-- ── Footer hint bar ──────────────────────────────────── -->
+                    <Border x:Name="FooterBar"
+                            BorderBrush="#18FFFFFF"
+                            BorderThickness="0,0.6,0,0"
+                            Padding="14,7">
+                        <StackPanel Orientation="Horizontal"
+                                    HorizontalAlignment="Center"
+                                    Opacity="0.55">
+                            <TextBlock Foreground="White" FontSize="11">
+                                <Run Text="↑↓" FontWeight="SemiBold"/>
+                                <Run Text="  Navigate   "/>
+                                <Run Text="↵" FontWeight="SemiBold"/>
+                                <Run Text="  Open   "/>
+                                <Run Text="Esc" FontWeight="SemiBold"/>
+                                <Run Text="  Close"/>
+                            </TextBlock>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
             </Grid>
         </Border>
     </Border>
