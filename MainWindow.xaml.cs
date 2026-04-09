@@ -347,6 +347,11 @@ public partial class MainWindow : Window
                     Process.Start(new ProcessStartInfo("outlookcal:") { UseShellExecute = true });
                     break;
 
+                case ResultCategory.Currency:
+                    // Copy converted value to clipboard
+                    System.Windows.Clipboard.SetText(result.ActionPath);
+                    break;
+
                 default:
                     // App, File, Web — open with shell
                     Process.Start(new ProcessStartInfo(result.ActionPath)

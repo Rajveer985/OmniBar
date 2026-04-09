@@ -1,6 +1,6 @@
 namespace WinSpotlight;
 
-public enum ResultCategory { App, File, Folder, Web, Math, Clipboard, Timer, Calendar }
+public enum ResultCategory { App, File, Folder, Web, Math, Clipboard, Timer, Calendar, Currency }
 
 public class SearchResult
 {
@@ -19,6 +19,7 @@ public class SearchResult
         ResultCategory.Clipboard => "Clipboard",
         ResultCategory.Timer     => "Timer",
         ResultCategory.Calendar  => "Calendar",
+        ResultCategory.Currency  => "Currency",
         _                        => ""
     };
 
@@ -33,6 +34,7 @@ public class SearchResult
         ResultCategory.Clipboard => "📋",
         ResultCategory.Timer     => "⏲",
         ResultCategory.Calendar  => "📅",
+        ResultCategory.Currency  => "💱",
         _                        => "○"
     };
 

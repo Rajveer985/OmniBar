@@ -10,10 +10,11 @@ A macOS Spotlight-style launcher for Windows, built with C# and WPF.
 |---------|-------------|
 | **Fluid Animations** | High-end macOS-style "pop-in" transitions and smooth layout shifts |
 | **Launch apps** | Indexes all Start Menu shortcuts — type the app name and hit Enter |
+| **Advanced Math** | Supports `sin(pi/2)`, `sqrt(144)`, `2^10`, `log(100)` and more (mXparser) |
+| **Currency Converter** | Type `100 usd to inr` for live exchange rates (Frankfurter API) |
 | **Timer Adder** | Type `timer 5m` to set a countdown in the native Windows Clock app |
 | **Calendar Events**| View upcoming schedule directly from the search bar (WinRT integration) |
 | **Search files** | Searches Desktop, Documents, Downloads, Pictures, Music, Videos |
-| **Calculator** | Type any math expression (`3+2`) — results appear instantly |
 | **Clipboard history**| Tracks your last 25 entries — select to copy again |
 | **Web search** | Always available at the bottom — opens Google in your browser |
 

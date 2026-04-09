@@ -3,9 +3,12 @@ using System.Collections.Generic;
 using System.Data;
 using System.IO;
 using System.Linq;
+using System.Net.Http;
+using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
+using org.mariuszgromada.math.mxparser;
 
 namespace WinSpotlight;
 
@@ -14,6 +17,7 @@ public sealed class SearchEngine
     private readonly ClipboardManager _clipboard;
     private List<AppEntry> _appCache = [];
     private volatile bool  _cacheReady;
+    private static readonly HttpClient _http = new();
 
     public SearchEngine(ClipboardManager clipboard)
     {
@@ -38,58 +42,115 @@ public sealed class SearchEngine
 
         var results = new List<SearchResult>();
 
-        // 0. Timer / Calendar specific triggers
+        // 0. Timer trigger
         var timer = TryProcessTimer(query);
         if (timer != null) results.Add(timer);
+
+        // 1. Advanced Calculator (mXparser)
         var math = TryCalculate(query);
         if (math != null) results.Add(math);
 
-        // 2. Apps
+        // 2. Currency conversion
+        var currency = await TryConvertCurrencyAsync(query);
+        if (currency != null) results.Add(currency);
+
+        // 3. Apps
         var apps = await SearchAppsAsync(query, ct);
         results.AddRange(apps.Take(5));
 
-        // 3. Files
+        // 4. Files
         var files = await SearchFilesAsync(query, ct);
         results.AddRange(files.Take(4));
 
-        // 4. Clipboard history
+        // 5. Clipboard history
         results.AddRange(ClipboardResults(query).Take(2));
 
-        // 5. Web search – always last
+        // 6. Web search – always last
         results.Add(WebResult(query));
 
         return results;
     }
 
     // ═══════════════════════════════════════════════════════════════════════
-    //  Calculator
+    //  Advanced Calculator (mXparser)
     // ═══════════════════════════════════════════════════════════════════════
-
-    // Allow digits, spaces, operators, parentheses, dots
-    private static readonly Regex MathRx =
-        new(@"^[\d\s\+\-\*\/\(\)\.\,\%]+$", RegexOptions.Compiled);
 
     private static SearchResult? TryCalculate(string q)
     {
         var expr = q.Trim().TrimEnd('=');
         if (expr.Length < 2) return null;
-        if (!MathRx.IsMatch(expr)) return null;
+
+        // Quick check: must contain at least one digit
+        if (!expr.Any(char.IsDigit)) return null;
 
         try
         {
-            var raw    = new DataTable().Compute(expr, null);
-            var value  = Convert.ToDouble(raw);
-            var display = value % 1 == 0 ? ((long)value).ToString()
-                                         : value.ToString("G12");
+            // Enable non-commercial use
+            License.iConfirmNonCommercialUse("OmniBar");
+            
+            var expression = new Expression(expr);
+            double value = expression.calculate();
+
+            if (double.IsNaN(value) || double.IsInfinity(value)) return null;
+
+            var display = value % 1 == 0 && Math.Abs(value) < 1e15
+                ? ((long)value).ToString()
+                : value.ToString("G12");
+
             return new SearchResult
             {
                 Title      = display,
                 Subtitle   = $"{expr.Trim()} = {display}",
                 Category   = ResultCategory.Math,
-                ActionPath = display    // copied to clipboard on launch
+                ActionPath = display
             };
         }
         catch { return null; }
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    //  Currency Converter (Frankfurter API)
+    // ═══════════════════════════════════════════════════════════════════════
+
+    // Matches: "100 usd to inr", "50.5 eur to gbp", "convert 200 jpy to usd"
+    private static readonly Regex CurrencyRx = new(
+        @"^(?:convert\s+)?(\d+\.?\d*)\s*([a-zA-Z]{3})\s+(?:to|in)\s+([a-zA-Z]{3})$",
+        RegexOptions.IgnoreCase | RegexOptions.Compiled);
+
+    private static async Task<SearchResult?> TryConvertCurrencyAsync(string query)
+    {
+        var match = CurrencyRx.Match(query.Trim());
+        if (!match.Success) return null;
+
+        double amount = double.Parse(match.Groups[1].Value);
+        string from   = match.Groups[2].Value.ToUpperInvariant();
+        string to     = match.Groups[3].Value.ToUpperInvariant();
+
+        try
+        {
+            string url = $"https://api.frankfurter.dev/v1/latest?amount={amount}&from={from}&to={to}";
+            var json = await _http.GetStringAsync(url);
+            
+            using var doc = JsonDocument.Parse(json);
+            var rates = doc.RootElement.GetProperty("rates");
+            
+            if (rates.TryGetProperty(to, out var rateValue))
+            {
+                double converted = rateValue.GetDouble();
+                string display = converted.ToString("N2");
+
+                return new SearchResult
+                {
+                    Title      = $"{display} {to}",
+                    Subtitle   = $"{amount} {from} = {display} {to} — Copy to clipboard",
+                    Category   = ResultCategory.Currency,
+                    ActionPath = $"{display} {to}"
+                };
+            }
+        }
+        catch { /* network error or invalid currency */ }
+
+        return null;
     }
 
     // ═══════════════════════════════════════════════════════════════════════
