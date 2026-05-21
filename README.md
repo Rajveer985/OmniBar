@@ -2,6 +2,10 @@
 
 A macOS Spotlight-style launcher for Windows, built with C# and WPF.
 
+<p align="center">
+  <img src="assets/demo.gif" alt="OmniBar Demo" width="720">
+</p>
+
 ---
 
 ## Features

@@ -12,3 +12,6 @@ git_info.txt
 git_status.txt
 build_output.txt
 build_output2.txt
+
+# Original promo video (too large for repo — GIF in assets/ is used instead)
+*.mp4
